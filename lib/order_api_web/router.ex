@@ -19,6 +19,15 @@ defmodule OrderApiWeb.Router do
     get "/", PageController, :index
   end
 
+  scope "/" do
+    pipe_through :api
+
+    forward "/graphiql", Absinthe.Plug.GraphiQL,
+      schema: OrderApiWeb.Schema,
+      interface: :simple,
+      context: %{pubsub: OrdersApiWeb.Endpoint}
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", OrderApiWeb do
   #   pipe_through :api
