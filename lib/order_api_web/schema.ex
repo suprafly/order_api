@@ -54,6 +54,7 @@ defmodule OrderApiWeb.Schema do
       arg :order_id, non_null(:id)
       arg :amount, non_null(:string)
       arg :note, non_null(:string)
+      arg :idempotency_key, non_null(:string)
 
       resolve &Resolver.create_payment/3
     end
