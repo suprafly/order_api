@@ -4,7 +4,7 @@ defmodule OrderApi.Orders do
   """
 
   import Ecto.Query, warn: false
-  alias OrderApi.Repo
+  alias OrderApi.{Payments.Payment, Repo}
 
   alias OrderApi.Orders.Order
 
@@ -18,7 +18,9 @@ defmodule OrderApi.Orders do
 
   """
   def list_orders do
-    Repo.all(Order)
+    Order
+    |> Repo.all()
+    |> Repo.preload(:payments)
   end
 
   @doc """
@@ -35,7 +37,11 @@ defmodule OrderApi.Orders do
       ** (Ecto.NoResultsError)
 
   """
-  def get_order!(id), do: Repo.get!(Order, id)
+  def get_order!(id) do
+    Order
+    |> Repo.get!(id)
+    |> Repo.preload(:payments)
+  end
 
   @doc """
   Creates a order.
@@ -52,6 +58,32 @@ defmodule OrderApi.Orders do
   def create_order(attrs \\ %{}) do
     %Order{}
     |> Order.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates an order with a payment.
+  """
+  def create_order_with_payment(attrs \\ %{}) do
+    with order_keys <- [:balance_due, :description, :total],
+         {order_attrs, payment_attrs} <- Map.split(attrs, order_keys),
+         {:ok, order} <- create_order(order_attrs),
+         payment_attrs <- Map.put(payment_attrs, :applied_at, NaiveDateTime.utc_now()),
+         {:ok, payment} <- build_order_payment(order, payment_attrs)
+    do
+      {:ok, {order, payment}}
+    else
+      {:error, %Ecto.Changeset{data: %Order{}}} ->
+        {:error, "could not create order"}
+      {:error, %Ecto.Changeset{data: %Payment{}}} ->
+        {:error, "could not create payment"}
+    end
+  end
+
+  def build_order_payment(order, attrs) do
+    order
+    |> Ecto.build_assoc(:payments, attrs)
+    |> Payment.changeset(attrs)
     |> Repo.insert()
   end
 

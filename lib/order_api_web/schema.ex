@@ -1,19 +1,40 @@
 defmodule OrderApiWeb.Schema do
   use Absinthe.Schema
 
-  alias OrderApiWeb.OrderResolver
+  alias OrderApiWeb.Resolver
+
+  import_types Absinthe.Type.Custom
 
   object :order do
     field :id, non_null(:id)
     field :balance_due, non_null(:string)
     field :description, non_null(:string)
     field :total, non_null(:string)
+    field :payments, list_of(:payment)
+  end
+
+  object :payment do
+    field :id, non_null(:id)
+    field :amount, non_null(:string)
+    field :applied_at, :naive_datetime
+    field :note, non_null(:string)
+    field :order_id, non_null(:id)
+  end
+
+  object :order_and_payment do
+    field :id, non_null(:id)
+    field :balance_due, non_null(:string)
+    field :description, non_null(:string)
+    field :total, non_null(:string)
+    field :amount, non_null(:string)
+    field :applied_at, :naive_datetime
+    field :note, non_null(:string)
   end
 
   query do
     @desc "Get all orders"
     field :all_orders, non_null(list_of(non_null(:order))) do
-      resolve(&OrderResolver.all_orders/3)
+      resolve(&Resolver.all_orders/3)
     end
   end
 
@@ -24,8 +45,31 @@ defmodule OrderApiWeb.Schema do
       arg :description, non_null(:string)
       arg :total, non_null(:string)
 
+      resolve &Resolver.create_order/3
+    end
 
-      resolve &NewsResolver.create_order/3
+    @desc "Create a new payment"
+    field :create_payment, :payment do
+      arg :order_id, non_null(:id)
+      arg :amount, non_null(:string)
+      arg :note, non_null(:string)
+
+      resolve &Resolver.create_payment/3
+    end
+
+
+    @desc "Place order and pay (atomic)"
+    field :create_order_and_payment, :order_and_payment do
+      # order fields
+      arg :balance_due, non_null(:string)
+      arg :description, non_null(:string)
+      arg :total, non_null(:string)
+
+      # payment fields
+      arg :amount, non_null(:string)
+      arg :note, non_null(:string)
+
+      resolve &Resolver.create_order_and_payment/3
     end
   end
 end

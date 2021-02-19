@@ -4,7 +4,7 @@ defmodule OrderApi.Payments do
   """
 
   import Ecto.Query, warn: false
-  alias OrderApi.Repo
+  alias OrderApi.{Orders, Repo}
 
   alias OrderApi.Payments.Payment
 
@@ -50,9 +50,14 @@ defmodule OrderApi.Payments do
 
   """
   def create_payment(attrs \\ %{}) do
-    %Payment{}
+    with order <- Orders.get_order!(attrs.order_id),
+         attrs <- Map.put(attrs, :applied_at, NaiveDateTime.utc_now())
+    do
+    order
+    |> Ecto.build_assoc(:payments, attrs)
     |> Payment.changeset(attrs)
     |> Repo.insert()
+    end
   end
 
   @doc """
