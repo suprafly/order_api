@@ -86,6 +86,51 @@ defmodule OrderApiWeb.SchemaTest do
         "idempotencyKey" => ^key}}} = resp
     end
 
+    test "ensure payment idempotency", %{conn: conn, order: %{id: order_id}} do
+      key = Ecto.UUID.generate()
+      query = """
+      mutation {
+        createPayment(orderId: "#{order_id}", amount: "10", note: "some note", idempotencyKey: "#{key}")
+        {
+          id
+          orderId
+          amount
+          idempotencyKey
+          note
+        }
+      }
+      """
+      resp =
+        conn
+        |> post("/api", %{query: query})
+        |> json_response(200)
+
+      # the first payment succeeds
+      assert %{"data" => %{"createPayment" => %{
+        "amount" => "10",
+        "note" => "some note",
+        "id" => _,
+        "orderId" => ^order_id,
+        "idempotencyKey" => ^key}}} = resp
+
+      resp =
+        conn
+        |> post("/api", %{query: query})
+        |> json_response(200)
+
+      # the second payment fails, because the idempotencyKey is the same
+      assert %{
+        "data" => %{"createPayment" => nil},
+        "errors" => [
+          %{
+            "locations" => [%{"column" => 3, "line" => 2}],
+            "message" => "could not create payment",
+            "path" => ["createPayment"]
+          }
+        ]
+      } = resp
+    end
+
     test "create new order and payment", %{conn: conn} do
       key = Ecto.UUID.generate()
       order_args = """
