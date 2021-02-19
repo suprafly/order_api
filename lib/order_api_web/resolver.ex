@@ -1,8 +1,8 @@
 defmodule OrderApiWeb.Resolver do
-  alias OrderApi.{Orders, Payments}
+  alias OrderApi.{Orders, Payments, Repo}
 
   def all_orders(_root, _args, _info) do
-    {:ok, Orders.list_orders()}
+    {:ok, Orders.list_orders() |> Repo.preload(:payments_applied)}
   end
 
   def create_order(_root, args, _info) do

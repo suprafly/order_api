@@ -50,11 +50,11 @@ defmodule OrderApi.Payments do
 
   """
   def create_payment(attrs \\ %{}) do
-    with order <- Orders.get_order!(attrs.order_id),
+    with order <- Orders.get_order!(attrs.order_id) |> Repo.preload(:payments_applied),
          attrs <- Map.put(attrs, :applied_at, NaiveDateTime.utc_now())
     do
     order
-    |> Ecto.build_assoc(:payments, attrs)
+    |> Ecto.build_assoc(:payments_applied, attrs)
     |> Payment.changeset(attrs)
     |> Repo.insert()
     end

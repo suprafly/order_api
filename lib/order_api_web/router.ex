@@ -22,10 +22,7 @@ defmodule OrderApiWeb.Router do
   scope "/" do
     pipe_through :api
 
-    forward "/graphiql", Absinthe.Plug.GraphiQL,
-      schema: OrderApiWeb.Schema,
-      interface: :simple,
-      context: %{pubsub: OrdersApiWeb.Endpoint}
+    forward "/", Absinthe.Plug, schema: OrderApiWeb.Schema
   end
 
   # Other scopes may use custom stacks.
@@ -46,6 +43,15 @@ defmodule OrderApiWeb.Router do
     scope "/" do
       pipe_through :browser
       live_dashboard "/dashboard", metrics: OrderApiWeb.Telemetry
+    end
+
+    scope "/" do
+      pipe_through :api
+
+      forward "/graphiql", Absinthe.Plug.GraphiQL,
+        schema: OrderApiWeb.Schema,
+        interface: :simple,
+        context: %{pubsub: OrdersApiWeb.Endpoint}
     end
   end
 end

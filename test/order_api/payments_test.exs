@@ -4,16 +4,25 @@ defmodule OrderApi.PaymentsTest do
   alias OrderApi.Payments
 
   describe "payments" do
-    alias OrderApi.Payments.Payment
+    alias OrderApi.{Orders, Payments.Payment}
 
+    @valid_order_attrs %{balance_due: "120.5", description: "some description", total: "120.5"}
     @valid_attrs %{amount: "120.5", applied_at: ~N[2010-04-17 14:00:00], note: "some note"}
     @update_attrs %{amount: "456.7", applied_at: ~N[2011-05-18 15:01:01], note: "some updated note"}
     @invalid_attrs %{amount: nil, applied_at: nil, note: nil}
 
+    def valid_attrs() do
+      {:ok, order} = Orders.create_order(@valid_order_attrs)
+
+      @valid_attrs
+      |> Map.put(:order_id, order.id)
+      |> Map.put(:idempotency_key, Ecto.UUID.generate())
+    end
+
     def payment_fixture(attrs \\ %{}) do
       {:ok, payment} =
         attrs
-        |> Enum.into(@valid_attrs)
+        |> Enum.into(valid_attrs())
         |> Payments.create_payment()
 
       payment
@@ -30,21 +39,23 @@ defmodule OrderApi.PaymentsTest do
     end
 
     test "create_payment/1 with valid data creates a payment" do
-      assert {:ok, %Payment{} = payment} = Payments.create_payment(@valid_attrs)
+      assert {:ok, %Payment{} = payment} = Payments.create_payment(valid_attrs())
       assert payment.amount == Decimal.new("120.5")
-      assert payment.applied_at == ~N[2010-04-17 14:00:00]
+      refute is_nil(payment.applied_at)
       assert payment.note == "some note"
     end
 
     test "create_payment/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Payments.create_payment(@invalid_attrs)
+      {:ok, order} = Orders.create_order(@valid_order_attrs)
+      invalid_attrs = Map.put(@invalid_attrs, :order_id, order.id)
+      assert {:error, %Ecto.Changeset{}} = Payments.create_payment(invalid_attrs)
     end
 
     test "update_payment/2 with valid data updates the payment" do
       payment = payment_fixture()
       assert {:ok, %Payment{} = payment} = Payments.update_payment(payment, @update_attrs)
       assert payment.amount == Decimal.new("456.7")
-      assert payment.applied_at == ~N[2011-05-18 15:01:01]
+      refute is_nil(payment.applied_at)
       assert payment.note == "some updated note"
     end
 

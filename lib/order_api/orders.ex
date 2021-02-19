@@ -20,7 +20,6 @@ defmodule OrderApi.Orders do
   def list_orders do
     Order
     |> Repo.all()
-    |> Repo.preload(:payments_applied)
   end
 
   @doc """
@@ -40,7 +39,6 @@ defmodule OrderApi.Orders do
   def get_order!(id) do
     Order
     |> Repo.get!(id)
-    |> Repo.preload(:payments_applied)
   end
 
   @doc """
