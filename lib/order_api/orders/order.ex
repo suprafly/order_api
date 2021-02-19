@@ -9,7 +9,7 @@ defmodule OrderApi.Orders.Order do
     field :description, :string
     field :total, :decimal
 
-    has_many :payments, OrderApi.Payments.Payment
+    has_many :payments_applied, OrderApi.Payments.Payment
 
     timestamps()
   end

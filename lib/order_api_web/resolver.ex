@@ -26,13 +26,17 @@ defmodule OrderApiWeb.Resolver do
   def create_order_and_payment(_root, args, _info) do
     case Orders.create_order_with_payment(args) do
       {:ok, {order, payment}} ->
-        {:ok,
-          order
-          |> Map.from_struct()
-          |> Map.put(:amount, payment.amount)
-          |> Map.put(:note, payment.note)}
+        {:ok, %{order: order, payment: payment}}
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  def order(args, %{source: %{order: order}}) do
+    {:ok, order}
+  end
+
+  def payment(args, %{source: %{payment: payment}}) do
+    {:ok, payment}
   end
 end

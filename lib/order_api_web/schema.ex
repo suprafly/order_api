@@ -10,7 +10,7 @@ defmodule OrderApiWeb.Schema do
     field :balance_due, non_null(:string)
     field :description, non_null(:string)
     field :total, non_null(:string)
-    field :payments, list_of(:payment)
+    field :payments_applied, list_of(:payment)
   end
 
   object :payment do
@@ -19,16 +19,17 @@ defmodule OrderApiWeb.Schema do
     field :applied_at, :naive_datetime
     field :note, non_null(:string)
     field :order_id, non_null(:id)
+    field :idempotency_key, non_null(:string)
   end
 
   object :order_and_payment do
-    field :id, non_null(:id)
-    field :balance_due, non_null(:string)
-    field :description, non_null(:string)
-    field :total, non_null(:string)
-    field :amount, non_null(:string)
-    field :applied_at, :naive_datetime
-    field :note, non_null(:string)
+    field :order, :order do
+      resolve &Resolver.order/2
+    end
+
+    field :payment, :payment do
+      resolve &Resolver.payment/2
+    end
   end
 
   query do
@@ -57,8 +58,7 @@ defmodule OrderApiWeb.Schema do
       resolve &Resolver.create_payment/3
     end
 
-
-    @desc "Place order and pay (atomic)"
+    @desc "Place order and pay"
     field :create_order_and_payment, :order_and_payment do
       # order fields
       arg :balance_due, non_null(:string)
@@ -68,6 +68,7 @@ defmodule OrderApiWeb.Schema do
       # payment fields
       arg :amount, non_null(:string)
       arg :note, non_null(:string)
+      arg :idempotency_key, non_null(:string)
 
       resolve &Resolver.create_order_and_payment/3
     end

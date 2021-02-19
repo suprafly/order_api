@@ -20,7 +20,7 @@ defmodule OrderApi.Orders do
   def list_orders do
     Order
     |> Repo.all()
-    |> Repo.preload(:payments)
+    |> Repo.preload(:payments_applied)
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule OrderApi.Orders do
   def get_order!(id) do
     Order
     |> Repo.get!(id)
-    |> Repo.preload(:payments)
+    |> Repo.preload(:payments_applied)
   end
 
   @doc """
@@ -82,7 +82,7 @@ defmodule OrderApi.Orders do
 
   def build_order_payment(order, attrs) do
     order
-    |> Ecto.build_assoc(:payments, attrs)
+    |> Ecto.build_assoc(:payments_applied, attrs)
     |> Payment.changeset(attrs)
     |> Repo.insert()
   end
